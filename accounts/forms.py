@@ -13,35 +13,6 @@ class UserForm(forms.ModelForm):
         exclude = ('password', )
 
 
-class UserStudiesForm(forms.Form):
-    template = 'accounts/researcher_form.html'
-    user = forms.ModelChoiceField(User.objects.all(), required=True, label='Researcher')
-    studies = forms.ModelMultipleChoiceField(
-        Study.objects.all(), required=True, label='Assigned Studies')
-
-    def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('instance')
-        super(UserStudiesForm, self).__init__(*args, **kwargs)
-
-    def is_valid(self):
-        valid = super(UserStudiesForm, self).is_valid()
-        if valid and len(self.data['studies']) > 0:
-            return True
-
-    def save(self):
-        permissions = ['studies.can_view_study', 'studies.can_edit_study']
-        current_permitted_objects = get_objects_for_user(self.cleaned_data['user'], permissions)
-        disallowed_studies = current_permitted_objects.exclude(
-            id__in=[x.id for x in self.cleaned_data['studies']])
-
-        for perm in permissions:
-            for study in self.cleaned_data['studies']:
-                assign_perm(perm, self.cleaned_data['user'], study)
-            for study in disallowed_studies:
-                remove_perm(perm, self.cleaned_data['user'], study)
-        return self.cleaned_data['user']
-
-
 class ParticipantSignupForm(UserCreationForm):
 
     def save(self, commit=True):
@@ -54,7 +25,7 @@ class ParticipantSignupForm(UserCreationForm):
 
     class Meta:
         model = User
-        fields = ('username', 'given_name')
+        fields = ('username', 'given_name', 'contact_name')
         exclude = ('user_permissions', 'groups', '_identicon', 'organization',
                    'is_active', 'is_staff', 'is_superuser', 'last_login',
                    'middle_name', 'last_name')
@@ -74,7 +45,7 @@ class ParticipantUpdateForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ('username', 'given_name')
+        fields = ('username', 'given_name', 'contact_name')
         labels = {
             'given_name': "Username"
         }
